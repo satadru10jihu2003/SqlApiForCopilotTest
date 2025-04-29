@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using System.Data.SqlClient;
-using Dapper;
 using SqlApiForCopilotTest.Models;
+using SqlApiForCopilotTest.Providers;
 
 namespace SqlApiForCopilotTest.Controllers
 {
@@ -10,29 +8,24 @@ namespace SqlApiForCopilotTest.Controllers
     [Route("api/[controller]")]
     public class QueryController : ControllerBase
     {
-        private readonly IConfiguration _config;
-        public QueryController(IConfiguration config)
+        private readonly IValidationProvider _validationProvider;
+        public QueryController(IValidationProvider validationProvider)
         {
-            _config = config;
+            _validationProvider = validationProvider;
         }
 
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] QueryRequest request)
         {
-            if (string.IsNullOrWhiteSpace(request.TableName) || request.Columns == null || !request.Columns.Any())
-                return BadRequest("Invalid input.");
-
-            // Prevent SQL injection by allowing only alphanumeric and underscore in table/column names
-            if (!System.Text.RegularExpressions.Regex.IsMatch(request.TableName, @"^\w+$") ||
-                request.Columns.Any(c => !System.Text.RegularExpressions.Regex.IsMatch(c, @"^\w+$")))
-                return BadRequest("Invalid table or column name.");
-
-            var columns = string.Join(", ", request.Columns.Select(c => $"[{c}]").ToArray());
-            var sql = $"SELECT {columns} FROM [{request.TableName}]";
-
-            using var conn = new SqlConnection(_config.GetConnectionString("DefaultConnection"));
-            var result = (await conn.QueryAsync(sql)).Select(row => (IDictionary<string, object>)row).ToList();
-            return Ok(result);
+            try
+            {
+                var result = await _validationProvider.QueryTableAsync(request.TableName, request.Columns);
+                return Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
 }

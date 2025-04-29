@@ -3,6 +3,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+builder.Services.AddScoped<SqlApiForCopilotTest.Repository.IQueryRepository, SqlApiForCopilotTest.Repository.QueryRepository>();
+builder.Services.AddScoped<SqlApiForCopilotTest.Providers.IValidationProvider, SqlApiForCopilotTest.Providers.ValidationProvider>();
 
 var app = builder.Build();
 
