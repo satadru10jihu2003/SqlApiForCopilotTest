@@ -1,0 +1,6 @@
+@SqlApiForCopilotTest_HostAddress = http://localhost:5089
+
+GET {{SqlApiForCopilotTest_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
